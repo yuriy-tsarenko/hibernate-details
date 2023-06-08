@@ -2,8 +2,8 @@ package com.goit.hibernate.app.configuration.hibernate;
 
 import jakarta.persistence.Id;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.PersistentObjectException;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.hibernate.query.MutationQuery;
 import org.hibernate.query.Query;
 
@@ -11,9 +11,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
+import static com.goit.hibernate.app.configuration.hibernate.util.DbUtils.dbCall;
 import static java.lang.String.format;
 import static java.lang.String.join;
 
@@ -43,13 +42,21 @@ public abstract class HibernateAbstractRepository<T, ID> {
     }
 
     public List<T> findAll() {
-        return dbCall(session -> session
+        return dbCall(datasource, session -> session
                 .createQuery(selectTemplate, entityType)
                 .getResultList());
     }
 
+    public TransactionalResult<List<T>> findAllTransactional() {
+        return dbCall(datasource, session -> {
+            List<T> list = session.createQuery(selectTemplate, entityType)
+                    .getResultList();
+            return TransactionalResult.of(session, session.getTransaction(), list);
+        });
+    }
+
     public T findById(ID id) {
-        return dbCall(session -> {
+        return dbCall(datasource, session -> {
             String queryString = join(" ", selectTemplate, whereTemplate);
             Query<T> query = session.createQuery(queryString, entityType);
             query.setParameter("id", id);
@@ -57,16 +64,38 @@ public abstract class HibernateAbstractRepository<T, ID> {
             try {
                 result = query.getSingleResult();
             } catch (Exception e) {
-                log.warn("no results found", e);
+                log.warn("No results found", e);
                 result = null;
             }
             return result;
         });
     }
 
+    public TransactionalResult<T> findByIdTransactional(ID id) {
+        return dbCall(datasource, session -> {
+            String queryString = join(" ", selectTemplate, whereTemplate);
+            Query<T> query = session.createQuery(queryString, entityType);
+            query.setParameter("id", id);
+            T result;
+            try {
+                result = query.getSingleResult();
+            } catch (Exception e) {
+                log.warn("No results found", e);
+                result = null;
+            }
+            return TransactionalResult.of(session, session.getTransaction(), result);
+        });
+    }
+
     public T save(T entity) {
-        dbVoidCall(session -> save(entity, session));
-        return entity;
+        return dbCall(datasource, session -> save(entity, session));
+    }
+
+    public TransactionalResult<T> saveTransactional(T entity) {
+        return dbCall(datasource, session -> {
+            T saved = save(entity, session);
+            return TransactionalResult.of(session, session.getTransaction(), saved);
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -75,12 +104,13 @@ public abstract class HibernateAbstractRepository<T, ID> {
             ID id = (ID) idField.get(entity);
             return deleteById(id);
         } catch (IllegalAccessException e) {
+            log.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
     public int deleteById(ID id) {
-        return dbCall(session -> {
+        return dbCall(datasource, session -> {
             String queryString = join(" ", deleteTemplate, whereTemplate);
             MutationQuery mutationQuery = session.createMutationQuery(queryString);
             mutationQuery.setParameter("id", id);
@@ -91,35 +121,26 @@ public abstract class HibernateAbstractRepository<T, ID> {
     @SuppressWarnings("unchecked")
     private T save(T entity, Session session) {
         try {
-            T saved = session.merge(entityType.getSimpleName(), entity);
+            return tryPersist(entity, session);
+        } catch (PersistentObjectException e) {
+            return tryMerge(entity, session);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private T tryMerge(T entity, Session session) {
+        try {
+            T saved = session.merge(entity);
             idField.set(entity, (ID) idField.get(saved));
-            return entity;
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <R> R dbCall(Function<Session, R> function) {
-        try (Session session = datasource.openSession()) {
-            Transaction transaction = session.beginTransaction();
-            R result = function.apply(session);
-            transaction.commit();
-            return result;
+            return saved;
         } catch (Exception e) {
-            log.error("db execution failed", e);
             throw new RuntimeException(e);
         }
     }
 
-    private void dbVoidCall(Consumer<Session> function) {
-        try (Session session = datasource.openSession()) {
-            Transaction transaction = session.beginTransaction();
-            function.accept(session);
-            transaction.commit();
-        } catch (Exception e) {
-            log.error("db execution failed", e);
-            throw new RuntimeException(e);
-        }
+    private T tryPersist(T entity, Session session) {
+        session.persist(entity);
+        return entity;
     }
-
 }

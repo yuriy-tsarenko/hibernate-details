@@ -32,10 +32,8 @@ CREATE TABLE products (
     product_id INT PRIMARY KEY,
     product_name VARCHAR(50),
     supplier_id INT,
-    category_id INT,
     unit_price DECIMAL(10,2),
-    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id),
-    FOREIGN KEY (category_id) REFERENCES categories(category_id)
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
 );
 
 -- Create the orders table
@@ -45,17 +43,6 @@ CREATE TABLE orders (
     order_date DATE,
     total_amount DECIMAL(10,2),
     FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
-);
-
--- Create the order_details table
-CREATE TABLE order_details (
-    order_id INT,
-    product_id INT,
-    quantity INT,
-    price DECIMAL(10,2),
-    PRIMARY KEY (order_id, product_id),
-    FOREIGN KEY (order_id) REFERENCES orders(order_id),
-    FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
 -- Create the employees table

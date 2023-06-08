@@ -8,10 +8,13 @@ import org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl;
 import org.hibernate.boot.registry.classloading.spi.ClassLoaderService;
 import org.hibernate.cfg.Configuration;
 
+import java.util.Objects;
+
 public class Datasource {
 
     private final Configuration configuration;
     private final SessionFactory sessionFactory;
+    private Session session;
 
     public Datasource(Environment environment, Class<?>... entities) {
         this.configuration = HibernateConfiguration.setup(environment, entities);
@@ -19,7 +22,20 @@ public class Datasource {
     }
 
     public Session openSession() {
-        return this.sessionFactory.openSession();
+        if (Objects.nonNull(session) && session.isOpen()) {
+            session.flush();
+            session.close();
+        }
+        session = sessionFactory.openSession();
+        return session;
+    }
+
+    public Session currentSession() {
+        return session;
+    }
+
+    public boolean hasActiveSession() {
+        return Objects.nonNull(session) && session.isOpen();
     }
 
     private SessionFactory createSessionFactory() {
