@@ -4,7 +4,6 @@ import com.goit.hibernate.app.configuration.Environment;
 import com.goit.hibernate.app.configuration.hibernate.Datasource;
 import com.goit.hibernate.app.dto.CustomerDto;
 import com.goit.hibernate.app.entity.CustomerEntity;
-import com.goit.hibernate.app.mapper.CustomerEntityMapper;
 import com.goit.hibernate.app.mapper.CustomerMapper;
 import com.goit.hibernate.app.repository.CustomerEntityRepository;
 import com.goit.hibernate.app.servlet.exception.HibernateAppBadRequestException;
@@ -18,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.goit.hibernate.app.servlet.ServletUtils.resolveNumericPathVariable;
 import static com.goit.hibernate.app.servlet.ServletUtils.sendJsonResponse;
@@ -27,8 +27,7 @@ import static java.util.Objects.isNull;
 public class CustomerServlet extends HttpServlet {
 
     private CustomerEntityRepository customerEntityRepository;
-    private CustomerMapper dtoMapper;
-    private CustomerEntityMapper entityMapper;
+    private CustomerMapper customerMapper;
     private Gson gson;
 
     @Override
@@ -39,8 +38,7 @@ public class CustomerServlet extends HttpServlet {
                 .create();
         Environment environment = (Environment) config.getServletContext().getAttribute(APP_ENV);
         customerEntityRepository = new CustomerEntityRepository(new Datasource(environment));
-        dtoMapper = CustomerMapper.instance();
-        entityMapper = CustomerEntityMapper.instance();
+        customerMapper = CustomerMapper.instance();
     }
 
     @Override
@@ -52,8 +50,9 @@ public class CustomerServlet extends HttpServlet {
                             .map(id -> {
                                 CustomerEntity entity = customerEntityRepository.findById(id);
                                 validateIsCustomerExists(id, entity);
-                                return List.of(entityMapper.map(entity));
-                            }).orElse(entityMapper.map(customerEntityRepository.findAll()));
+                                CustomerDto customerDto = customerMapper.mapEntityToDto(entity);
+                                return List.of(Objects.requireNonNullElse(customerDto, new CustomerDto()));
+                            }).orElse(customerMapper.mapEntityToDto(customerEntityRepository.findAll()));
                     sendJsonResponse(response, customerDtos);
                 })
                 .build()
@@ -67,9 +66,9 @@ public class CustomerServlet extends HttpServlet {
                 .action(() -> {
                     String json = new String(request.getInputStream().readAllBytes());
                     CustomerDto customerDto = gson.fromJson(json, CustomerDto.class);
-                    CustomerEntity entity = dtoMapper.map(customerDto);
+                    CustomerEntity entity = customerMapper.mapDtoToEntity(customerDto);
                     CustomerEntity saved = customerEntityRepository.save(entity);
-                    CustomerDto mapped = entityMapper.map(saved);
+                    CustomerDto mapped = customerMapper.mapEntityToDto(saved);
                     sendJsonResponse(response, mapped);
                 })
                 .build()
@@ -84,9 +83,9 @@ public class CustomerServlet extends HttpServlet {
                     String json = new String(request.getInputStream().readAllBytes());
                     CustomerDto customerDto = gson.fromJson(json, CustomerDto.class);
                     validateCustomer(customerDto);
-                    CustomerEntity entity = dtoMapper.map(customerDto);
+                    CustomerEntity entity = customerMapper.mapDtoToEntity(customerDto);
                     CustomerEntity saved = customerEntityRepository.save(entity);
-                    CustomerDto mapped = entityMapper.map(saved);
+                    CustomerDto mapped = customerMapper.mapEntityToDto(saved);
                     sendJsonResponse(response, mapped);
                 })
                 .build()
