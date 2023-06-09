@@ -1,4 +1,11 @@
 -- Create the customers table
+DROP TABLE IF EXISTS product_categories;
+DROP TABLE IF EXISTS user_account;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS customers;
+
+
 CREATE TABLE IF NOT EXISTS customers (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     customer_name VARCHAR(50),
@@ -38,7 +45,7 @@ CREATE TABLE IF NOT EXISTS categories (
     description VARCHAR(100)
 );
 
-CREATE TABLE IF NOT EXISTS products_categories (
+CREATE TABLE IF NOT EXISTS product_categories (
     product_id BIGINT,
     category_id BIGINT,
     PRIMARY KEY(product_id, category_id),

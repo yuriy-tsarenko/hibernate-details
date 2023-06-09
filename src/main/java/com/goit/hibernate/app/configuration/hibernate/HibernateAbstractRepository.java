@@ -52,7 +52,7 @@ public abstract class HibernateAbstractRepository<T, ID> {
             List<T> list = session.createQuery(selectTemplate, entityType)
                     .getResultList();
             return TransactionalResult.of(session, session.getTransaction(), list);
-        });
+        }, false);
     }
 
     public T findById(ID id) {
@@ -84,7 +84,7 @@ public abstract class HibernateAbstractRepository<T, ID> {
                 result = null;
             }
             return TransactionalResult.of(session, session.getTransaction(), result);
-        });
+        }, false);
     }
 
     public T save(T entity) {

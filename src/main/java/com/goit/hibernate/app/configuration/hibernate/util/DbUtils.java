@@ -14,11 +14,15 @@ import java.util.function.Function;
 public final class DbUtils {
 
     public static <R> R dbCall(Datasource datasource, Function<Session, R> function) {
+        return dbCall(datasource, function, true);
+    }
+
+    public static <R> R dbCall(Datasource datasource, Function<Session, R> function, boolean autocommit) {
         try {
             Session session;
             Transaction transaction;
             R result;
-            if (datasource.hasActiveSession()) {
+            if (datasource.hasActiveSession() && datasource.currentSession().getTransaction().isActive()) {
                 log.warn("Observed externally controlled session, it won't be closed at the repository level");
                 session = datasource.currentSession();
                 result = function.apply(session);
@@ -26,7 +30,10 @@ public final class DbUtils {
                 session = datasource.openSession();
                 transaction = session.beginTransaction();
                 result = function.apply(session);
-                transaction.commit();
+                if (autocommit) {
+                    transaction.commit();
+                    session.close();
+                }
             }
             return result;
         } catch (Exception e) {

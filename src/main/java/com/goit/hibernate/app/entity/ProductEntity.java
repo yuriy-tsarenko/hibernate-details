@@ -37,7 +37,7 @@ public class ProductEntity {
     private CustomerEntity customer;
 
     @JoinTable(
-            name = "products_categories",
+            name = "product_categories",
             joinColumns = @JoinColumn(name = "product_id"),
             inverseJoinColumns = @JoinColumn(name = "category_id")
     )

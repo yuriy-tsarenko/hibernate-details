@@ -5,7 +5,7 @@ import org.hibernate.Transaction;
 
 import java.util.Optional;
 
-public class TransactionalResult<T> implements AutoCloseable {
+public final class TransactionalResult<T> implements AutoCloseable {
     private final Session session;
     private final Transaction transaction;
     private final T value;
