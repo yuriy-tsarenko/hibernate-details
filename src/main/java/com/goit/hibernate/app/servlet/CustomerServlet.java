@@ -4,8 +4,8 @@ import com.goit.hibernate.app.configuration.Environment;
 import com.goit.hibernate.app.configuration.hibernate.Datasource;
 import com.goit.hibernate.app.dto.CustomerDto;
 import com.goit.hibernate.app.entity.CustomerEntity;
-import com.goit.hibernate.app.mapper.CustomerDtoMapper;
 import com.goit.hibernate.app.mapper.CustomerEntityMapper;
+import com.goit.hibernate.app.mapper.CustomerMapper;
 import com.goit.hibernate.app.repository.CustomerEntityRepository;
 import com.goit.hibernate.app.servlet.exception.HibernateAppBadRequestException;
 import com.goit.hibernate.app.servlet.exception.HibernateAppNotFoundException;
@@ -27,7 +27,7 @@ import static java.util.Objects.isNull;
 public class CustomerServlet extends HttpServlet {
 
     private CustomerEntityRepository customerEntityRepository;
-    private CustomerDtoMapper dtoMapper;
+    private CustomerMapper dtoMapper;
     private CustomerEntityMapper entityMapper;
     private Gson gson;
 
@@ -39,7 +39,7 @@ public class CustomerServlet extends HttpServlet {
                 .create();
         Environment environment = (Environment) config.getServletContext().getAttribute(APP_ENV);
         customerEntityRepository = new CustomerEntityRepository(new Datasource(environment));
-        dtoMapper = CustomerDtoMapper.instance();
+        dtoMapper = CustomerMapper.instance();
         entityMapper = CustomerEntityMapper.instance();
     }
 

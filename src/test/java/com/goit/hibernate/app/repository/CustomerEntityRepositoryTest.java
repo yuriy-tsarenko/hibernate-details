@@ -119,7 +119,6 @@ class CustomerEntityRepositoryTest extends HibernateApplicationTest {
     void productToCustomerRelations() {
         //Given
         CustomerEntityRepository customerEntityRepository = new CustomerEntityRepository(datasource);
-        ProductEntityRepository productEntityRepository = new ProductEntityRepository(datasource);
         CustomerEntity testCustomer = createTestCustomer();
         ProductEntity testProduct = createTestProduct();
 
@@ -132,6 +131,7 @@ class CustomerEntityRepositoryTest extends HibernateApplicationTest {
                     .orElseThrow(() -> new RuntimeException("Customer not found"));
             List<ProductEntity> savedCustomerProducts = savedCustomer.getProducts();
 
+            //Then
             assertNotNull(savedCustomerProducts);
             assertFalse(savedCustomerProducts.isEmpty());
             ProductEntity savedProduct = savedCustomerProducts.get(0);

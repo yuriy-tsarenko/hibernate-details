@@ -9,12 +9,9 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor(staticName = "of")
-public class CustomerDto {
-
+public class CategoryDto {
     private Long id;
     private String name;
-    private String contactName;
-    private String country;
-    private UserAccountDto account;
+    private String description;
     private List<ProductDto> products;
 }

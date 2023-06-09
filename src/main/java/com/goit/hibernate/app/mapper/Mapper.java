@@ -1,15 +1,22 @@
 package com.goit.hibernate.app.mapper;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public interface Mapper<T, R> {
+public interface Mapper<E, D> {
 
-    R map(T source) throws RuntimeException;
+    D mapEntityToDto(E source) throws RuntimeException;
 
-    default List<R> map(List<T> source) throws RuntimeException {
+    E mapDtoToEntity(D source) throws RuntimeException;
+
+    default List<D> mapEntityToDto(List<E> source) throws RuntimeException {
         return source.stream()
-                .map(this::map)
-                .collect(Collectors.toList());
+                .map(this::mapEntityToDto)
+                .toList();
+    }
+
+    default List<E> mapDtoToEntity(List<D> source) throws RuntimeException {
+        return source.stream()
+                .map(this::mapDtoToEntity)
+                .toList();
     }
 }
