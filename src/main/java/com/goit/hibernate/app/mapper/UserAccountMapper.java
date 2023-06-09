@@ -9,7 +9,7 @@ import static java.util.Objects.isNull;
 @NoArgsConstructor(staticName = "instance")
 public class UserAccountMapper implements Mapper<UserAccountEntity, UserAccountDto> {
 
-    private final CustomerEntityMapper customerEntityMapper = CustomerEntityMapper.instance();
+    private final CustomerMapper customerMapper = CustomerMapper.instance();
 
     @Override
     public UserAccountDto mapEntityToDto(UserAccountEntity source) throws RuntimeException {
@@ -19,7 +19,7 @@ public class UserAccountMapper implements Mapper<UserAccountEntity, UserAccountD
         UserAccountDto target = new UserAccountDto();
         target.setPassword(source.getPassword());
         target.setUsername(source.getUsername());
-        target.setCustomer(customerEntityMapper.map(source.getCustomer()));
+        target.setCustomer(customerMapper.mapEntityToDto(source.getCustomer()));
         return target;
     }
 
@@ -31,7 +31,7 @@ public class UserAccountMapper implements Mapper<UserAccountEntity, UserAccountD
         UserAccountEntity target = new UserAccountEntity();
         target.setPassword(source.getPassword());
         target.setUsername(source.getUsername());
-        target.setCustomer(customerDtoMapper.map(source.getCustomer()));
+        target.setCustomer(customerMapper.mapDtoToEntity(source.getCustomer()));
         return target;
     }
 }
